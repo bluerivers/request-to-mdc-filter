@@ -1,0 +1,72 @@
+apply plugin: "java"
+
+apply plugin: "maven-publish"
+
+group = "kim.gin.utils.web"
+version = '1.0.0'
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.14'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile "org.slf4j:slf4j-api:1.7.20"
+    compile group: 'javax.servlet', name: 'javax.servlet-api', version: '3.1.0'
+
+    testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
+    testCompile "org.mockito:mockito-all:1.9.5"
+    testCompile 'org.slf4j:jcl-over-slf4j:1.7.5'
+    testCompile "ch.qos.logback:logback-classic:1.1.7"
+    testCompile "ch.qos.logback:logback-core:1.1.7"
+}
+
+sourceCompatibility = JavaVersion.VERSION_1_7
+targetCompatibility = JavaVersion.VERSION_1_7
+
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+
+task sourceJar(type: Jar) {
+    from sourceSets.main.allJava
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            artifactId = "web-request-context-filter"
+
+            artifact sourceJar {
+                    classifier "sources"
+            }
+
+            pom.withXml {
+                asNode().dependencies."*".findAll() {
+                    it.scope.text() == "runtime" && project.configurations.compile.allDependencies.find { dep ->
+                        dep.name == it.artifactId.text()
+                    }
+                }.each() {
+                    if (it.scope*.value != "testCompile") it.scope*.value = 'compile'
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            credentials {
+                username "admin"
+                password "admin123"
+            }
+            if (project.version.endsWith('-SNAPSHOT')) {
+            } else {
+            }
+        }
+    }
+}
+
+
